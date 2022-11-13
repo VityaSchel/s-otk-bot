@@ -108,3 +108,4 @@ dist
 out
 
 .mongodb
+session.json

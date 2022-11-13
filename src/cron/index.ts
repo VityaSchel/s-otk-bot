@@ -1,22 +1,29 @@
 import type { WithId } from 'mongodb'
 import '../.env'
-import getDB from '../db/init'
+import getDB, { dbConnection } from '../db/init'
 import type { Card } from '../db/schemas/Card'
 import SOTKAPI from 's-otk-js'
-import type { CardInfo } from 's-otk-js/out/cardsList'
 import Decimal from 'decimal.js'
 import TelegramBot from 'node-telegram-bot-api'
+import fs from 'fs/promises'
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
+import getBalance from '../getCardBalance'
 
-if(!process.env.SOTK_USERNAME || !process.env.SOTK_PASSWORD) throw new Error('Set SOTK_USERNAME and SOTK_PASSWORD env variables!')
 if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN)
 
+console.log('Worker started!')
+
 const SOTK = new SOTKAPI()
-await SOTK.login({ 
-  username: process.env.SOTK_USERNAME,
-  password: process.env.SOTK_PASSWORD
-})
+
+const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
+const sessionRaw = await fs.readFile(__dirname + '../../session.json', 'utf-8')
+const session = JSON.parse(sessionRaw) as typeof SOTK.credentials
+SOTK.credentials = session
+
+console.log('Logged in as', process.env.SOTK_USERNAME)
 
 const db = await getDB()
 const cursor = db.collection<Card>('cards').find({})
@@ -25,7 +32,7 @@ let success = 0, errors = 0
 while(await cursor.hasNext()) {
   const card = await cursor.next() as WithId<Card>
   
-  const result = await getBalance(card.number)
+  const result = await getBalance(SOTK, card.number)
   if(result.success) {
     success++
     Decimal.set({ precision: 2 })
@@ -59,6 +66,9 @@ while(await cursor.hasNext()) {
 }
 
 console.log('Checked', success+errors, 'cards. Successfully:', success, 'Errors:', errors)
+await dbConnection.close()
+await bot.close()
+process.exit(0)
 
 async function sendResult(userID: TelegramBot.User['id'], text: string, options?: TelegramBot.SendMessageOptions) {
   try {
@@ -75,18 +85,3 @@ async function sendResult(userID: TelegramBot.User['id'], text: string, options?
   }
 }
 
-async function getBalance(cardID: string): Promise<{ success: true, balance: Decimal } | { success: false, error: 'CARD_FETCH_ERROR' | 'BALANCE_INVALID' }> {
-  let cardInfo: CardInfo
-  try {
-    cardInfo = await SOTK.getCardInfo(cardID)
-  } catch(e) {
-    return { success: false, error: 'CARD_FETCH_ERROR' }
-  }
-
-  const cardBalance = Number(cardInfo.balance)
-  if(typeof cardInfo.balance === 'string' && Number.isFinite(cardBalance)) {
-    return { success: true, balance: new Decimal(cardInfo.balance) }
-  } else {
-    return { success: false, error: 'BALANCE_INVALID' }
-  }
-}

@@ -1,7 +1,8 @@
 import TelegramBot from 'node-telegram-bot-api'
 import getDB from './db/init'
 import type { Card } from './db/schemas/Card'
-import { bot } from './index'
+import getBalance from './getCardBalance'
+import { bot, SOTK } from './index'
 
 export async function unlinkCard(user: TelegramBot.User, messageID: number, cardID: string) {
   if(await isCardLinked(user, cardID)) {
@@ -45,24 +46,40 @@ export async function fallbackToCardNumber(user: TelegramBot.User, cardID: strin
   if(await isCardLinked(user, cardID)) {
     const db = await getDB()
     await db.collection<Card>('cards').deleteOne({ userID: user.id, number: cardID })
-    await bot.sendMessage(user.id, `Карта ${cardID} была отвязана от бота, вы больше не получите уведомлений.`)
+    await bot.sendMessage(user.id, `Карта ${cardID} была отвязана от бота, ты больше не получишь уведомлений о ней.`)
   } else {
     const cards = await getLinkedCards(user)
     if(cards.length >= MAX_LINKED_CARDS) {
       await bot.sendMessage(
         user.id, 
-        'Вы привязали уже слишком много карт. Отвяжите одну из них в разделе «Мои карты», чтобы продолжить.'
+        'Ты уже привязал слишком много карт. Отвяжи одну из них в разделе «Мои карты», чтобы продолжить.'
       )
     } else {
-      const card = { balance: '200.0' }
       const db = await getDB()
+      const existing = await db.collection<Card>('cards').findOne({ number: cardID })
+      // if(existing) {
+      //   await bot.sendMessage(user.id, `Кто-то другой уже привязал карту ${cardID}. Следи за обновлениями бота, чтобы не пропустить момент, когда станет доступна возможность отслеживания одной карты несколькими людьми!`)
+      //   return
+      // }
+
+      let card: Awaited<ReturnType<typeof getBalance>>
+      try {
+        if(!existing) await SOTK.addCard(cardID)
+        card = await getBalance(SOTK, cardID)
+        if(!card.success) throw card.error
+      } catch(e) {
+        console.error('Unable to link card', cardID, user.id, e?.message ?? e)
+        await bot.sendMessage(user.id, `Не удалось привязать карту ${cardID}. Проверь правильность написания номера карты.`)
+        return
+      }
+
       await db.collection<Card>('cards').insertOne({ 
         userID: user.id, 
         number: cardID,
         lastChecked: new Date(),
-        balance: card.balance
+        balance: card.balance.toString()
       })
-      await bot.sendMessage(user.id, `Карта ${cardID} успешно привязана, теперь вы получаете уведомления! Чтобы отвязать ее, зайдите в раздел «Мои карты».`)
+      await bot.sendMessage(user.id, `Карта ${cardID} успешно привязана, теперь ты получаешь уведомления! Чтобы отвязать ее, зайди в раздел «Мои карты».`)
     }
   }
 }
