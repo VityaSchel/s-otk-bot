@@ -3,7 +3,8 @@ import { bot } from './index'
 import dedent from 'dedent'
 import { format, formatDistanceToNowStrict } from 'date-fns'
 import { ru as ruLocale } from 'date-fns/locale/index.js'
-import { Card, getLinkedCards } from './cardsList'
+import { getLinkedCards } from './cardsList'
+import type { Card } from './db/schemas/Card'
 
 export default async function sendMyCards(user: TelegramBot.User, callbackMessageID?: number) {
   const cardsList: Card[] = await getLinkedCards(user)
