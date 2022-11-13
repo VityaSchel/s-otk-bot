@@ -9,12 +9,13 @@ import type { Card } from './db/schemas/Card'
 export default async function sendMyCards(user: TelegramBot.User, callbackMessageID?: number) {
   const cardsList: Card[] = await getLinkedCards(user)
   
-  const cardsListText = cardsList
+  const cardsListText = cardsList.length ? cardsList
     .map(card => dedent`• <b>Карта <pre>${card.number}</pre></b>
       <b>Последняя проверка:</b> <pre>${formatDistanceToNowStrict(card.lastChecked, { locale: ruLocale, addSuffix: true })}</pre>
       <b>Баланс:</b> <pre>${card.balance}</pre>
     `)
     .join('\n\n')
+    : '<i>Не привязано еще ни одной карты</i>'
 
   const cardsListButtons: InlineKeyboardMarkup = {
     inline_keyboard: cardsList
@@ -25,7 +26,10 @@ export default async function sendMyCards(user: TelegramBot.User, callbackMessag
   }
 
   const text = `Привязанные карты:\n\n${cardsListText}`
-  const options: { reply_markup: TelegramBot.InlineKeyboardMarkup, parse_mode: 'HTML' } = { reply_markup: cardsListButtons, parse_mode: 'HTML' }
+  const options: { reply_markup?: TelegramBot.InlineKeyboardMarkup, parse_mode: 'HTML' } = { 
+    reply_markup: cardsList.length ? cardsListButtons : undefined, 
+    parse_mode: 'HTML' 
+  }
 
   if(callbackMessageID) {
     bot.editMessageText(text, { chat_id: user.id, message_id: callbackMessageID, ...options })
