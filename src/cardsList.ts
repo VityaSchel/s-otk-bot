@@ -62,6 +62,7 @@ export async function fallbackToCardNumber(user: TelegramBot.User, cardID: strin
       //   return
       // }
 
+      const message = await bot.sendMessage(user.id, `⌛️ Добавляю карту ${cardID}...`)
       let card: Awaited<ReturnType<typeof getBalance>>
       try {
         if(!existing) await SOTK.addCard(cardID)
@@ -69,7 +70,7 @@ export async function fallbackToCardNumber(user: TelegramBot.User, cardID: strin
         if(!card.success) throw card.error
       } catch(e) {
         console.error('Unable to link card', cardID, user.id, e?.message ?? e)
-        await bot.sendMessage(user.id, `Не удалось привязать карту ${cardID}. Проверь правильность написания номера карты.`)
+        await bot.editMessageText(`Не удалось привязать карту ${cardID}. Проверь правильность написания номера карты.`, { chat_id: user.id, message_id: message.message_id })
         return
       }
 
@@ -79,7 +80,7 @@ export async function fallbackToCardNumber(user: TelegramBot.User, cardID: strin
         lastChecked: new Date(),
         balance: card.balance.toString()
       })
-      await bot.sendMessage(user.id, `Карта ${cardID} успешно привязана, теперь ты получаешь уведомления! Чтобы отвязать ее, зайди в раздел «Мои карты».`)
+      await bot.editMessageText(`Карта ${cardID} успешно привязана, теперь ты получаешь уведомления! Чтобы отвязать ее, зайди в раздел «Мои карты».`, { chat_id: user.id, message_id: message.message_id })
     }
   }
 }

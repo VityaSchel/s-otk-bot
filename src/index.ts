@@ -10,16 +10,18 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
-if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
-export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN, { polling: true })
-
 if(!process.env.SOTK_USERNAME || !process.env.SOTK_PASSWORD) throw new Error('Set SOTK_USERNAME and SOTK_PASSWORD env variables!')
 export const SOTK = new SOTKAPI()
 await SOTK.login({ 
   username: process.env.SOTK_USERNAME,
   password: process.env.SOTK_PASSWORD
 })
-await fs.writeFile(__dirname + '../../session.json', JSON.stringify(SOTK.credentials), 'utf-8')
+await fs.writeFile(__dirname + '../session.json', JSON.stringify(SOTK.credentials), 'utf-8')
+console.log('Logged into SOTK as', process.env.SOTK_USERNAME)
+
+if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN, { polling: true })
+console.log('Telegram bot started working!')
 
 bot.on('message', event => {
   if(event.chat.type !== 'private') return

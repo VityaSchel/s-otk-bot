@@ -38,13 +38,17 @@ while(await cursor.hasNext()) {
     Decimal.set({ precision: 2 })
     const threshold = new Decimal(16.6).times(4)
     if(result.balance.lessThanOrEqualTo(threshold)) {
-      sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
+      await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: 'Пополнить на 50₽', callback_data: `invoice ${card.number} 50` }],
-            [{ text: 'Пополнить на 100₽', callback_data: `invoice ${card.number} 100` }],
-            [{ text: 'Пополнить на 200₽', callback_data: `invoice ${card.number} 200` }],
-            [{ text: 'Отвязать карту', callback_data: `unlink ${card.number}` }]
+            [
+              { text: 'Пополнить на 50₽', callback_data: `invoice ${card.number} 50` },
+              { text: 'Пополнить на 100₽', callback_data: `invoice ${card.number} 100` }
+            ],
+            [
+              { text: 'Пополнить на 200₽', callback_data: `invoice ${card.number} 200` },
+              { text: 'Отвязать карту', callback_data: `unlink ${card.number}` }
+            ]
           ]
         }
       })
@@ -53,11 +57,11 @@ while(await cursor.hasNext()) {
     errors++
     switch(result.error) {
       case 'BALANCE_INVALID':
-        sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный формат боту. Попробуйте пополнить карту или привязать другую.')
+        await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный формат боту. Попробуйте пополнить карту или привязать другую.')
         break
 
       case 'CARD_FETCH_ERROR':
-        sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный ответ боту. Попробуйте привязать карту заново.')
+        await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный ответ боту. Попробуйте привязать карту заново.')
         break
     }
   }
@@ -67,7 +71,7 @@ while(await cursor.hasNext()) {
 
 console.log('Checked', success+errors, 'cards. Successfully:', success, 'Errors:', errors)
 await dbConnection.close()
-await bot.close()
+// await bot.close()
 process.exit(0)
 
 async function sendResult(userID: TelegramBot.User['id'], text: string, options?: TelegramBot.SendMessageOptions) {
