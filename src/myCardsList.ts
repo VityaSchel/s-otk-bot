@@ -19,10 +19,16 @@ export default async function sendMyCards(user: TelegramBot.User, callbackMessag
 
   const cardsListButtons: InlineKeyboardMarkup = {
     inline_keyboard: cardsList
-      .map(card => [{
-        text: `Отвязать ${card.number}`,
-        callback_data: `unlink ${card.number}`
-      }])
+      .map(card => [
+        {
+          text: `Отвязать ${card.number}`,
+          callback_data: `unlink ${card.number}`
+        },
+        {
+          text: 'Пополнить на 100₽',
+          callback_data: `invoice ${card.number} 100`
+        },
+      ])
   }
 
   const text = `Привязанные карты:\n\n${cardsListText}`
