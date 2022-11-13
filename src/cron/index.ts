@@ -36,7 +36,7 @@ while(await cursor.hasNext()) {
   if(result.success) {
     success++
     Decimal.set({ precision: 2 })
-    const threshold = new Decimal(16.6).times(40)
+    const threshold = new Decimal(16.6).times(4)
     if(result.balance.lessThanOrEqualTo(threshold)) {
       await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
         reply_markup: {
