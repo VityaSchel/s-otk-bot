@@ -40,19 +40,51 @@ bot.on('message', event => {
   }
 })
 
-bot.on('callback_query', event => {
-  bot.answerCallbackQuery(event.id)
-
+bot.on('callback_query', async event => {
   if(event.message && event.data) {
     if(event.data === 'cards_list') {
+      bot.answerCallbackQuery(event.id)
       sendMyCards(event.from, event.message.message_id)
     } else {
       const unlinkCardRegex = /^unlink (\d{9}|\d{19})$/
       if(unlinkCardRegex.test(event.data)) {
+        bot.answerCallbackQuery(event.id)
         const cardID = event.data.match(unlinkCardRegex)?.[1]
         if(!cardID) return
         unlinkCard(event.from, event.message.message_id, cardID)
+      } else {
+        const createInvoiceRegex = /^invoice (\d{9}|\d{19}) (50|100|200)$/
+        if(createInvoiceRegex.test(event.data)) {
+          bot.answerCallbackQuery(event.id)
+          const cardID = event.data.match(createInvoiceRegex)?.[1]
+          const sum = event.data.match(createInvoiceRegex)?.[2]
+          if(!cardID || !sum) return
+          const message = await bot.sendMessage(event.from.id, `⌛️ Генерирую счет на ${sum}₽...`)
+          try {
+            const invoice = await SOTK.createInvoice(cardID, Number(sum) * 100)
+            if(invoice.formUrl) {
+              await bot.editMessageText(`Счет для оплаты карты ${cardID} на сумму ${sum}₽ сгенерирован!`, {
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: 'Оплатить на SberPay', url: invoice.formUrl }]
+                  ]
+                },
+                chat_id: event.from.id, 
+                message_id: message.message_id
+              })
+            } else {
+              throw 'no_url'
+            }
+          } catch(e) {
+            if(e !== 'no_url') console.error('Error while creating invoice for', event.from.id, e?.message ?? e)
+            await bot.editMessageText('Не удалось создать счет :(', { chat_id: event.from.id, message_id: message.message_id })
+          }
+        } else {
+          bot.answerCallbackQuery(event.id)
+        }
       }
     }
+  } else {
+    bot.answerCallbackQuery(event.id)
   }
 })

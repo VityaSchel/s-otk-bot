@@ -12,7 +12,7 @@ export default async function sendMyCards(user: TelegramBot.User, callbackMessag
   const cardsListText = cardsList.length ? cardsList
     .map(card => dedent`• <b>Карта <pre>${card.number}</pre></b>
       <b>Последняя проверка:</b> <pre>${formatDistanceToNowStrict(card.lastChecked, { locale: ruLocale, addSuffix: true })}</pre>
-      <b>Баланс:</b> <pre>${card.balance}</pre>
+      <b>Баланс:</b> <pre>${card.balance}₽</pre>
     `)
     .join('\n\n')
     : '<i>Не привязано еще ни одной карты</i>'
