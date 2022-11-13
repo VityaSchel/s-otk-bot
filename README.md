@@ -2,6 +2,10 @@
 
 Telegram-бот, предупреждающий о малом остатке на транспортной карте с сайта s-otk.ru
 
+[![Banner](./banner.png)](https://t.me/sotkbot)
+
+Развернутая версия: [https://t.me/sotkbot](https://t.me/sotkbot\)
+
 Работает на моей же библиотеке [s-otk-js](https://github.com/VityaSchel/s-otk-js)
 
 ## Установка
