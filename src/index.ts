@@ -4,7 +4,8 @@ import sendGreetings from './greetings'
 import sendMyCards from './myCardsList'
 import { fallbackToCardNumber, unlinkCard } from './cardsList'
 
-export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN as string, { polling: true })
+if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN, { polling: true })
 
 bot.on('message', event => {
   if(event.chat.type !== 'private') return
