@@ -10,7 +10,7 @@ type Card = {
   balance: string
 }
 export default function sendMyCards(user: TelegramBot.User, callbackMessageID?: number) {
-  const cardsList: Card[] = [{ number: '123456789', lastChecked: new Date(Date.now() - 1000*60*60), balance: '100' }]
+  const cardsList: Card[] = [{ number: '123456789', lastChecked: new Date(Date.now() - 1000*60*60), balance: '100' }, { number: '100249123', lastChecked: new Date(Date.now() - 1000*60*60), balance: '250.10' }] // MOCK
   
   const cardsListText = cardsList
     .map(card => dedent`• <b>Карта <pre>${card.number}</pre></b>
@@ -21,12 +21,12 @@ export default function sendMyCards(user: TelegramBot.User, callbackMessageID?: 
   const cardsListButtons: InlineKeyboardMarkup = {
     inline_keyboard: cardsList
       .map(card => [{
-        text: card.number,
+        text: `Отвязать ${card.number}`,
         callback_data: `unlink ${card.number}`
       }])
   }
 
-  const text = `Привязанные карты:\n\n${cardsListText}\n\nВыбери карту ниже, чтобы отвязать её:`
+  const text = `Привязанные карты:\n\n${cardsListText}`
   const options: { reply_markup: TelegramBot.InlineKeyboardMarkup, parse_mode: 'HTML' } = { reply_markup: cardsListButtons, parse_mode: 'HTML' }
 
   if(callbackMessageID) {
