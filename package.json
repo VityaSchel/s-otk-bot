@@ -17,6 +17,7 @@
     "date-fns": "^2.29.3",
     "dedent": "^0.7.0",
     "dotenv": "^16.0.0",
+    "mongodb": "^4.11.0",
     "node-telegram-bot-api": "^0.60.0"
   },
   "devDependencies": {

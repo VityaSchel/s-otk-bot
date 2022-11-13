@@ -3,20 +3,17 @@ import { bot } from './index'
 import dedent from 'dedent'
 import { format, formatDistanceToNowStrict } from 'date-fns'
 import { ru as ruLocale } from 'date-fns/locale/index.js'
+import { Card, getLinkedCards } from './cardsList'
 
-type Card = {
-  number: string
-  lastChecked: Date
-  balance: string
-}
-export default function sendMyCards(user: TelegramBot.User, callbackMessageID?: number) {
-  const cardsList: Card[] = [{ number: '123456789', lastChecked: new Date(Date.now() - 1000*60*60), balance: '100' }, { number: '100249123', lastChecked: new Date(Date.now() - 1000*60*60), balance: '250.10' }] // MOCK
+export default async function sendMyCards(user: TelegramBot.User, callbackMessageID?: number) {
+  const cardsList: Card[] = await getLinkedCards(user)
   
   const cardsListText = cardsList
     .map(card => dedent`• <b>Карта <pre>${card.number}</pre></b>
       <b>Последняя проверка:</b> <pre>${formatDistanceToNowStrict(card.lastChecked, { locale: ruLocale, addSuffix: true })}</pre>
       <b>Баланс:</b> <pre>${card.balance}</pre>
     `)
+    .join('\n\n')
 
   const cardsListButtons: InlineKeyboardMarkup = {
     inline_keyboard: cardsList
