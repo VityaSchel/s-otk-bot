@@ -10,6 +10,7 @@ export default async function getBalance(SOTK: SOTKAPI, cardID: string): Promise
   try {
     cardInfo = await SOTK.getCardInfo(cardID)
   } catch(e) {
+    console.error(e)
     return { success: false, error: 'CARD_FETCH_ERROR' }
   }
 

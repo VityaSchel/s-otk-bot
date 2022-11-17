@@ -9,6 +9,9 @@ import fs from 'fs/promises'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
 import getBalance from '../getCardBalance'
+import { addRefetchUtil, SOTKAPIExtended } from '../utils'
+
+const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
 if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
 
@@ -16,9 +19,8 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN)
 
 console.log('Worker started!')
 
-const SOTK = new SOTKAPI()
-
-const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
+const SOTK = new SOTKAPI() as SOTKAPIExtended
+addRefetchUtil(SOTK, __dirname + '../../session.json')
 const sessionRaw = await fs.readFile(__dirname + '../../session.json', 'utf-8')
 const session = JSON.parse(sessionRaw) as typeof SOTK.credentials
 SOTK.credentials = session
@@ -28,13 +30,18 @@ console.log('Logged in as', process.env.SOTK_USERNAME)
 const db = await getDB()
 const cursor = db.collection<Card>('cards').find({})
 // TODO: Batch send results if encountered two same cardIDs in DB, without getting balance twice
+// Attempt to fix this issue
+const balances: { [key: Card['number']]: Decimal } = {}
 let success = 0, errors = 0
 while(await cursor.hasNext()) {
   const card = await cursor.next() as WithId<Card>
   
-  const result = await getBalance(SOTK, card.number)
+  const result = balances[card.number]
+    ? { success: true, error: null, balance: balances[card.number] }
+    : await getBalance(SOTK, card.number)
   if(result.success) {
     success++
+    balances[card.number] = result.balance
     Decimal.set({ precision: 2 })
     const threshold = new Decimal(16.6).times(4)
     if(result.balance.lessThanOrEqualTo(threshold)) {

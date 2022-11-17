@@ -7,15 +7,17 @@ import SOTKAPI from 's-otk-js'
 import fs from 'fs/promises'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { addRefetchUtil, SOTKAPIExtended } from './utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
 if(!process.env.SOTK_USERNAME || !process.env.SOTK_PASSWORD) throw new Error('Set SOTK_USERNAME and SOTK_PASSWORD env variables!')
-export const SOTK = new SOTKAPI()
+export const SOTK = new SOTKAPI() as SOTKAPIExtended
 await SOTK.login({ 
   username: process.env.SOTK_USERNAME,
   password: process.env.SOTK_PASSWORD
 })
+addRefetchUtil(SOTK, __dirname + '../session.json')
 await fs.writeFile(__dirname + '../session.json', JSON.stringify(SOTK.credentials), 'utf-8')
 console.log('Logged into SOTK as', process.env.SOTK_USERNAME)
 
