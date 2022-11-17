@@ -72,8 +72,10 @@ while(await cursor.hasNext()) {
       await db.collection<Card>('cards').updateOne({
         number: card.number
       }, {
-        lastChecked: new Date(),
-        balance: card.balance.toString()
+        $set: {
+          lastChecked: new Date(),
+          balance: card.balance.toString()
+        }
       })
     } else {
       errors++
