@@ -69,12 +69,12 @@ while(await cursor.hasNext()) {
     const result = await getBalance(SOTK, card.number)
     if(result.success) {
       successBalanceReceived(result.balance)
-      await db.collection<Card>('cards').updateOne({
+      await db.collection<Card>('cards').updateMany({
         number: card.number
       }, {
         $set: {
           lastChecked: new Date(),
-          balance: card.balance.toString()
+          balance: result.balance.toString()
         }
       })
     } else {
