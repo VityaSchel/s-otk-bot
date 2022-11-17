@@ -8,7 +8,9 @@ export default async function getBalance(SOTK: SOTKAPI, cardID: string): Promise
 > {
   let cardInfo: CardInfo
   try {
+    await SOTK.addCard(cardID)
     cardInfo = await SOTK.getCardInfo(cardID)
+    await SOTK.deleteCard(cardID)
   } catch(e) {
     console.error(e)
     return { success: false, error: 'CARD_FETCH_ERROR' }

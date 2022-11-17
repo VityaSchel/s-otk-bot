@@ -4,6 +4,7 @@ import getDB, { dbConnection } from '../db/init'
 import type { Card } from '../db/schemas/Card'
 import SOTKAPI from 's-otk-js'
 import Decimal from 'decimal.js'
+Decimal.set({ precision: 1 })
 import TelegramBot from 'node-telegram-bot-api'
 import fs from 'fs/promises'
 import { dirname } from 'path'
@@ -27,6 +28,10 @@ SOTK.credentials = session
 
 console.log('Logged in as', process.env.SOTK_USERNAME)
 
+for(const card of await SOTK.getCards()) {
+  await card.delete()
+}
+
 const db = await getDB()
 const cursor = db.collection<Card>('cards').find({})
 // TODO: Batch send results if encountered two same cardIDs in DB, without getting balance twice
@@ -36,15 +41,11 @@ let success = 0, errors = 0
 while(await cursor.hasNext()) {
   const card = await cursor.next() as WithId<Card>
   
-  const result = balances[card.number]
-    ? { success: true, error: null, balance: balances[card.number] }
-    : await getBalance(SOTK, card.number)
-  if(result.success) {
+  const successBalanceReceived = async (balance: Decimal) => {
     success++
-    balances[card.number] = result.balance
-    Decimal.set({ precision: 2 })
+    balances[card.number] = balance
     const threshold = new Decimal(16.6).times(4)
-    if(result.balance.lessThanOrEqualTo(threshold)) {
+    if(balance.lessThanOrEqualTo(threshold)) {
       await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
         reply_markup: {
           inline_keyboard: [
@@ -60,16 +61,31 @@ while(await cursor.hasNext()) {
         }
       })
     }
-  } else {
-    errors++
-    switch(result.error) {
-      case 'BALANCE_INVALID':
-        await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный формат боту. Попробуйте пополнить карту или привязать другую.')
-        break
+  }
 
-      case 'CARD_FETCH_ERROR':
-        await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный ответ боту. Попробуйте привязать карту заново.')
-        break
+  if(balances[card.number]) {
+    successBalanceReceived(balances[card.number])
+  } else {
+    const result = await getBalance(SOTK, card.number)
+    if(result.success) {
+      successBalanceReceived(result.balance)
+      await db.collection<Card>('cards').updateOne({
+        number: card.number
+      }, {
+        lastChecked: new Date(),
+        balance: card.balance.toString()
+      })
+    } else {
+      errors++
+      switch(result.error) {
+        case 'BALANCE_INVALID':
+          await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный формат боту. Попробуйте пополнить карту или привязать другую.')
+          break
+  
+        case 'CARD_FETCH_ERROR':
+          await sendResult(card.userID, 'Ошибка во время получения баланса: сервер s-otk.ru вернул некорректный ответ боту. Попробуйте привязать карту заново.')
+          break
+      }
     }
   }
 
