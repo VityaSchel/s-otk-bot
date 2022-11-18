@@ -22,7 +22,6 @@ export function addRefetchUtil(SOTK: SOTKAPIExtended, sessionJSONPath, credentia
             username: credentials.username,
             password: credentials.password
           })
-          await this.getAccountInfo(false)
           const session = {
             authToken: sessionData.authToken,
             csrfToken: sessionData.csrfToken,
@@ -30,6 +29,7 @@ export function addRefetchUtil(SOTK: SOTKAPIExtended, sessionJSONPath, credentia
           }
           await fs.writeFile(sessionJSONPath, JSON.stringify(session), 'utf-8')
           this.credentials = session
+          await this.getAccountInfo(false)
           return await this._runJSONOperation(...args)
         } else {
           throw e
