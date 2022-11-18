@@ -11,17 +11,20 @@ import { addRefetchUtil, SOTKAPIExtended } from './utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
+if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+
 if(!process.env.BOT_SOTK_USERNAME || !process.env.BOT_SOTK_PASSWORD) throw new Error('Set SOTK_USERNAME and SOTK_PASSWORD env variables!')
 export const SOTK = new SOTKAPI() as SOTKAPIExtended
+
 await SOTK.login({ 
   username: process.env.BOT_SOTK_USERNAME,
   password: process.env.BOT_SOTK_PASSWORD
 })
-addRefetchUtil(SOTK, __dirname + '../session.json', { username: process.env.BOT_SOTK_USERNAME, password: process.env.BOT_SOTK_PASSWORD })
 await fs.writeFile(__dirname + '../session.json', JSON.stringify(SOTK.credentials), 'utf-8')
+addRefetchUtil(SOTK, __dirname + '../session.json', { username: process.env.BOT_SOTK_USERNAME, password: process.env.BOT_SOTK_PASSWORD })
+
 console.log('Logged into SOTK as', process.env.BOT_SOTK_USERNAME)
 
-if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
 export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN, { polling: true })
 console.log('Telegram bot started working!')
 
