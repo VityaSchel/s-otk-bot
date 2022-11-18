@@ -65,7 +65,6 @@ export async function fallbackToCardNumber(user: TelegramBot.User, cardID: strin
       const message = await bot.sendMessage(user.id, `⌛️ Добавляю карту ${cardID}...`)
       let card: Awaited<ReturnType<typeof getBalance>>
       try {
-        if(!existing) await SOTK.addCard(cardID)
         card = await getBalance(SOTK, cardID)
         if(!card.success) throw card.error
       } catch(e) {

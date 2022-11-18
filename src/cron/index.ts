@@ -15,18 +15,19 @@ import { addRefetchUtil, SOTKAPIExtended } from '../utils'
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
 if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+if(!process.env.CRONJOB_SOTK_USERNAME || !process.env.CRONJOB_SOTK_PASSWORD) throw new Error('Set CRONJOB_SOTK_USERNAME and CRONJOB_SOTK_PASSWORD env variables!')
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN)
 
 console.log('Worker started!')
 
 const SOTK = new SOTKAPI() as SOTKAPIExtended
-addRefetchUtil(SOTK, __dirname + '../../session.json')
+addRefetchUtil(SOTK, __dirname + '../../session.json', { username: process.env.CRONJOB_SOTK_USERNAME, password: process.env.CRONJOB_SOTK_PASSWORD })
 const sessionRaw = await fs.readFile(__dirname + '../../session.json', 'utf-8')
 const session = JSON.parse(sessionRaw) as typeof SOTK.credentials
 SOTK.credentials = session
 
-console.log('Logged in as', process.env.SOTK_USERNAME)
+console.log('Logged in as', process.env.CRONJOB_SOTK_USERNAME)
 
 for(const card of await SOTK.getCards()) {
   await card.delete()
