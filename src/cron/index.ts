@@ -75,11 +75,11 @@ while(await cursor.hasNext()) {
   }
 
   if(balances[card.number]) {
-    successBalanceReceived(balances[card.number])
+    await successBalanceReceived(balances[card.number])
   } else {
     const result = await getBalance(SOTK, card.number)
     if(result.success) {
-      successBalanceReceived(result.balance)
+      await successBalanceReceived(result.balance)
       await db.collection<Card>('cards').updateMany({
         number: card.number
       }, {
