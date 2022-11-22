@@ -25,8 +25,8 @@ export default async function sendMyCards(user: TelegramBot.User, callbackMessag
           callback_data: `unlink ${card.number}`
         },
         {
-          text: 'Пополнить на 100₽',
-          callback_data: `invoice ${card.number} 100`
+          text: 'Пополнить на 300₽',
+          callback_data: `invoice ${card.number} 300`
         },
       ])
   }
