@@ -9,10 +9,13 @@ import fs from 'fs/promises'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { addRefetchUtil, SOTKAPIExtended } from './utils'
+import getDB from './db/init'
 
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
-if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+const token = process.env.NODE_ENV === 'development' ? process.env.DEV_TELEGRAM_BOT_API_TOKEN : process.env.TELEGRAM_BOT_API_TOKEN
+
+if(!token) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
 
 if(!process.env.BOT_SOTK_USERNAME || !process.env.BOT_SOTK_PASSWORD) throw new Error('Set SOTK_USERNAME and SOTK_PASSWORD env variables!')
 export const SOTK = new SOTKAPI() as SOTKAPIExtended
@@ -26,7 +29,7 @@ addRefetchUtil(SOTK, __dirname + '../session.json', { username: process.env.BOT_
 
 console.log('Logged into SOTK as', process.env.BOT_SOTK_USERNAME)
 
-export const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN, { polling: true })
+export const bot = new TelegramBot(token, { polling: true })
 console.log('Telegram bot started working!')
 
 bot.on('message', event => {
@@ -37,7 +40,7 @@ bot.on('message', event => {
   
   if(event.text === 'Мои карты') {
     sendMyCards(user)
-  } else if(event.text === '/settings') {
+  } else if(event.text === 'Настройки оповещений' || event.text === '/settings') {
     sendSettings(user)
   } else if(event.text === 'Начать' || event.text.startsWith('/start')) {
     sendGreetings(user)
@@ -88,6 +91,16 @@ bot.on('callback_query', async event => {
           } catch(e) {
             if(e !== 'no_url') console.error('Error while creating invoice for', event.from.id, e?.message ?? e)
             await bot.editMessageText('Не удалось создать счет :(', { chat_id: event.from.id, message_id: message.message_id })
+          }
+        } else {
+          const changeThreshold = /^set_notification_threshold (\d*\.?\d+)$/
+          if(changeThreshold.test(event.data)) {
+            const newThreshold = event.data.match(changeThreshold)![1]
+            if(Number.isFinite(Number(newThreshold))) {
+              const db = await getDB()
+              await db.collection('users').updateOne({ userID: event.id }, { $set: { threshold: newThreshold } })
+              await bot.editMessageText(`Порог уведомлений изменен на ${newThreshold}₽`, { chat_id: event.from.id, message_id: event.message.message_id })
+            }
           }
         }
       }

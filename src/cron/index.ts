@@ -14,10 +14,12 @@ import { addRefetchUtil, SOTKAPIExtended } from '../utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url)) + '/'
 
-if(!process.env.TELEGRAM_BOT_API_TOKEN) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
+const token = process.env.NODE_ENV === 'development' ? process.env.DEV_TELEGRAM_BOT_API_TOKEN : process.env.TELEGRAM_BOT_API_TOKEN
+
+if(!token) throw new Error('Set TELEGRAM_BOT_API_TOKEN env variable!')
 if(!process.env.CRONJOB_SOTK_USERNAME || !process.env.CRONJOB_SOTK_PASSWORD) throw new Error('Set CRONJOB_SOTK_USERNAME and CRONJOB_SOTK_PASSWORD env variables!')
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_API_TOKEN)
+const bot = new TelegramBot(token)
 
 console.log('Worker started!')
 
@@ -50,17 +52,17 @@ while(await cursor.hasNext()) {
     success++
     balances[card.number] = balance
     const user = await db.collection('users').findOne({ userID: card.userID })
-    const threshold = Number.isSafeInteger(Number(user?.threshold)) ? new Decimal(user?.threshold) : DEFAULT_THRESHOLD
+    const threshold = Number.isFinite(Number(user?.threshold)) ? new Decimal(user?.threshold) : DEFAULT_THRESHOLD
     if(balance.lessThanOrEqualTo(threshold)) {
-      await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
+      await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${balance.toString()}₽`, {
         reply_markup: {
           inline_keyboard: [
             [
-              { text: 'Пополнить на 50₽', callback_data: `invoice ${card.number} 50` },
-              { text: 'Пополнить на 100₽', callback_data: `invoice ${card.number} 100` }
+              { text: 'Пополнить на 150₽', callback_data: `invoice ${card.number} 150` },
+              { text: 'Пополнить на 500₽', callback_data: `invoice ${card.number} 500` }
             ],
             [
-              { text: 'Пополнить на 200₽', callback_data: `invoice ${card.number} 200` },
+              { text: 'Пополнить на 1000₽', callback_data: `invoice ${card.number} 1000` },
               { text: 'Отвязать карту', callback_data: `unlink ${card.number}` }
             ],
             [

@@ -17,8 +17,8 @@ export default async function sendSettings(user: TelegramBot.User, callbackMessa
           { text: '132.8 (16.6₽*4*2)', callback_data: 'set_notification_threshold 132.8' },
         ],
         [
-          { text: '68 (17₽*2*2)', callback_data: 'set_notification_threshold 68' },
-          { text: '136 (17₽*4*2)', callback_data: 'set_notification_threshold 136' },
+          { text: '199.2 (16.6₽*6*2)', callback_data: 'set_notification_threshold 199.2' },
+          { text: '265.6 (16.6₽*8*2)', callback_data: 'set_notification_threshold 265.6' },
         ],
         [
           { text: 'Отмена', callback_data: 'start' }
