@@ -35,7 +35,7 @@ for(const card of await SOTK.getCards()) {
 
 const drivesPerDay = 4
 const days = 2
-const threshold = new Decimal(16.6).times(drivesPerDay).times(days)
+const DEFAULT_THRESHOLD = new Decimal(16.6).times(drivesPerDay).times(days)
 
 const db = await getDB()
 const cursor = db.collection<Card>('cards').find({})
@@ -49,6 +49,8 @@ while(await cursor.hasNext()) {
   const successBalanceReceived = async (balance: Decimal) => {
     success++
     balances[card.number] = balance
+    const user = await db.collection('users').findOne({ userID: card.userID })
+    const threshold = Number.isSafeInteger(Number(user?.threshold)) ? new Decimal(user?.threshold) : DEFAULT_THRESHOLD
     if(balance.lessThanOrEqualTo(threshold)) {
       await sendResult(card.userID, `Заканчиваются средства на карте ${card.number}! Остаток: ${card.balance.toString()}₽`, {
         reply_markup: {
@@ -60,6 +62,9 @@ while(await cursor.hasNext()) {
             [
               { text: 'Пополнить на 200₽', callback_data: `invoice ${card.number} 200` },
               { text: 'Отвязать карту', callback_data: `unlink ${card.number}` }
+            ],
+            [
+              { text: 'Настроить оповещения', callback_data: 'settings' }
             ]
           ]
         }

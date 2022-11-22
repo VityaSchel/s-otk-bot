@@ -1,6 +1,7 @@
 import './.env'
 import TelegramBot from 'node-telegram-bot-api'
 import sendGreetings from './greetings'
+import sendSettings from './settings'
 import sendMyCards from './myCardsList'
 import { fallbackToCardNumber, unlinkCard } from './cardsList'
 import SOTKAPI from 's-otk-js'
@@ -34,8 +35,10 @@ bot.on('message', event => {
   if(!user || user?.is_bot) return
   if(!event.text) return
   
-  if(event.text === 'Мои карты' || event.text === '/settings') {
+  if(event.text === 'Мои карты') {
     sendMyCards(user)
+  } else if(event.text === '/settings') {
+    sendSettings(user)
   } else if(event.text === 'Начать' || event.text.startsWith('/start')) {
     sendGreetings(user)
   } else if(/^(\d{9}|\d{19})$/.test(event.text)) {
@@ -50,6 +53,10 @@ bot.on('callback_query', async event => {
   if(event.message && event.data) {
     if(event.data === 'cards_list') {
       sendMyCards(event.from, event.message.message_id)
+    } else if(event.data === 'start') {
+      sendGreetings(event.from)
+    } else if(event.data === 'settings') {
+      sendSettings(event.from)
     } else {
       const unlinkCardRegex = /^unlink (\d{9}|\d{19})$/
       if(unlinkCardRegex.test(event.data)) {
