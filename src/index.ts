@@ -67,7 +67,7 @@ bot.on('callback_query', async event => {
         if(!cardID) return
         unlinkCard(event.from, event.message.message_id, cardID)
       } else {
-        const createInvoiceRegex = /^invoice (\d{9}|\d{19}) (50|100|200)$/
+        const createInvoiceRegex = /^invoice (\d{9}|\d{19}) (150|500|300|1000)$/
         if(createInvoiceRegex.test(event.data)) {
           const cardID = event.data.match(createInvoiceRegex)?.[1]
           const sum = event.data.match(createInvoiceRegex)?.[2]
